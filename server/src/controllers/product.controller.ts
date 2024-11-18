@@ -39,9 +39,9 @@ export class ProductController {
   }
 
   // Get all products
-  async getProducts(req: Request, res: Response): Promise<void> {
+  async findAll(req: Request, res: Response): Promise<void> {
     try {
-      const products = await this.productService.getProducts();
+      const products = await this.productService.findAll();
       res.status(200).json(products.map((product) => product.toJson()));
     } catch (error) {
       res.status(500).json({
@@ -52,10 +52,10 @@ export class ProductController {
   }
 
   // Get a single product by ID
-  async getProductById(req: Request, res: Response): Promise<void> {
+  async findOneById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const product = await this.productService.getProductById(Number(id));
+      const product = await this.productService.findOneById(Number(id));
       if (!product) {
         res.status(404).json({ message: 'Product not found' });
         return;

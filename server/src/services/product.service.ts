@@ -12,7 +12,7 @@ export class ProductService {
   }
 
   // Get all products
-  async getProducts(): Promise<Product[]> {
+  async findAll(): Promise<Product[]> {
     try {
       const products = await Product.findAll();
       return products;
@@ -22,7 +22,7 @@ export class ProductService {
   }
 
   // Get a single product by ID
-  async getProductById(id: number): Promise<Product | null> {
+  async findOneById(id: number): Promise<Product | null> {
     try {
       const product = await Product.findById(id);
       return product;

@@ -1,33 +1,45 @@
 import conn from '@db/db';
 import { RowDataPacket } from 'mysql2';
+
+export interface ProductInterface {
+  id: number;
+  name: string;
+  articleNumber: string;
+  description: string;
+  price: number;
+}
+
 export interface OrderDetailInterface {
   orderId: number;
   productId: number;
   quantity: number;
-  totalPrice: number;
 }
 
-export interface OrderDetailResponseInterface extends OrderDetailInterface {
+export interface OrderDetailResponseInterface {
   id: number;
+  orderId: number;
+  quantity: number;
+  totalPrice: number;
+  product: ProductInterface;
 }
 
 export class OrderDetail {
   id: number;
   orderId: number;
-  productId: number;
+  product: ProductInterface;
   quantity: number;
   totalPrice: number;
 
   constructor(
     id: number,
     orderId: number,
-    productId: number,
+    product: ProductInterface,
     quantity: number,
     totalPrice: number
   ) {
     this.id = id;
     this.orderId = orderId;
-    this.productId = productId;
+    this.product = product;
     this.quantity = quantity;
     this.totalPrice = totalPrice;
   }
@@ -36,7 +48,7 @@ export class OrderDetail {
     return new OrderDetail(
       data.id,
       data.orderId,
-      data.productId,
+      data.product,
       data.quantity,
       data.totalPrice
     );
@@ -46,57 +58,111 @@ export class OrderDetail {
     return {
       id: this.id,
       orderId: this.orderId,
-      productId: this.productId,
       quantity: this.quantity,
       totalPrice: this.totalPrice,
+      product: this.product,
     };
   }
 
-  // Create a new order detail in the database
+  // Create a new order detail
   static async create(orderDetail: OrderDetailInterface): Promise<OrderDetail> {
+    const priceQuery = `
+      SELECT price FROM Products WHERE id = ?
+    `;
+    const [productRows] = await conn.execute(priceQuery, [
+      orderDetail.productId,
+    ]);
+
+    if ((productRows as RowDataPacket[]).length === 0) {
+      throw new Error('Product not found');
+    }
+
+    const { name, price, description, articleNumber } = (
+      productRows as RowDataPacket[]
+    )[0];
+    const totalPrice = orderDetail.quantity * price;
+
     const statement = `
-      INSERT INTO Details (orderId, productId, quantity, totalPrice)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO Details (orderId, productId, quantity)
+      VALUES (?, ?, ?)
     `;
     const [result] = await conn.execute(statement, [
       orderDetail.orderId,
       orderDetail.productId,
       orderDetail.quantity,
-      orderDetail.totalPrice,
     ]);
+
     return new OrderDetail(
-      (result as any).insertId,
+      (result as RowDataPacket).insertId,
       orderDetail.orderId,
-      orderDetail.productId,
+      {
+        id: orderDetail.productId,
+        name: name,
+        description: description,
+        articleNumber: articleNumber,
+        price: price,
+      },
       orderDetail.quantity,
-      orderDetail.totalPrice
+      totalPrice
     );
   }
 
-  // Fetch all order details
+  // Fetch all order details with JOIN
   static async findAll(): Promise<OrderDetail[]> {
-    const [rows] = await conn.query('SELECT * FROM Details');
-    return (rows as OrderDetailResponseInterface[]).map((row) =>
-      OrderDetail.fromJson(row)
-    );
-  }
-
-  // Fetch order details by orderId
-  static async findByOrderId(orderId: number): Promise<OrderDetail[]> {
     const statement = `
-      SELECT * FROM Details WHERE orderId = ?
+      SELECT 
+        d.id AS id,
+        d.orderId AS orderId,
+        d.quantity AS quantity,
+        (d.quantity * p.price) AS totalPrice,
+        p.id AS productId,
+        p.name AS productName,
+        p.articleNumber AS productArticleNumber,
+        p.description AS productDescription,
+        p.price AS productPrice
+      FROM Details d
+      JOIN Products p ON d.productId = p.id
     `;
-    const [rows] = await conn.execute(statement, [orderId]);
-    return (rows as OrderDetailResponseInterface[]).map((row) =>
-      OrderDetail.fromJson(row)
+    const [rows] = await conn.query(statement);
+
+    return (rows as RowDataPacket[]).map((row) =>
+      OrderDetail.fromJson({
+        id: row.id,
+        orderId: row.orderId,
+        quantity: row.quantity,
+        totalPrice: row.totalPrice,
+        product: {
+          id: row.productId,
+          name: row.productName,
+          articleNumber: row.productArticleNumber,
+          description: row.productDescription,
+          price: row.productPrice,
+        },
+      })
     );
   }
 
-  // Update an order detail by ID
+  // Update order detail by ID
   static async updateById(
     id: number,
     orderDetail: OrderDetailInterface
   ): Promise<OrderDetail | null> {
+    const priceQuery = `
+      SELECT price FROM Products WHERE id = ?
+    `;
+    const [productRows] = await conn.execute(priceQuery, [
+      orderDetail.productId,
+    ]);
+
+    if ((productRows as RowDataPacket[]).length === 0) {
+      throw new Error('Product not found');
+    }
+
+    const { name, articleNumber, price, description } = (
+      productRows as RowDataPacket[]
+    )[0];
+    const totalPrice = orderDetail.quantity * price;
+
     const statement = `
       UPDATE Details
       SET orderId = ?, productId = ?, quantity = ?, totalPrice = ?
@@ -106,25 +172,69 @@ export class OrderDetail {
       orderDetail.orderId,
       orderDetail.productId,
       orderDetail.quantity,
-      orderDetail.totalPrice,
+      totalPrice,
       id,
     ]);
+
     if ((result as RowDataPacket).affectedRows === 0) {
       return null;
     }
+
     return new OrderDetail(
       id,
       orderDetail.orderId,
-      orderDetail.productId,
+      {
+        id: orderDetail.productId,
+        name: name,
+        articleNumber: articleNumber,
+        description: description,
+        price: price,
+      },
       orderDetail.quantity,
-      orderDetail.totalPrice
+      totalPrice
     );
   }
 
-  // Delete an order detail by ID
+  // Fetch order details by orderId with JOIN
+  static async findByOrderId(orderId: number): Promise<OrderDetail[]> {
+    const statement = `
+      SELECT 
+        d.id AS id,
+        d.orderId AS orderId,
+        d.quantity AS quantity,
+        (d.quantity * p.price) AS totalPrice,
+        p.id AS productId,
+        p.name AS productName,
+        p.description AS productDescription,
+        p.price AS productPrice
+      FROM Details d
+      JOIN Products p ON d.productId = p.id
+      WHERE d.orderId = ?
+    `;
+    const [rows] = await conn.execute(statement, [orderId]);
+
+    return (rows as RowDataPacket[]).map((row) =>
+      OrderDetail.fromJson({
+        id: row.id,
+        orderId: row.orderId,
+        quantity: row.quantity,
+        totalPrice: row.totalPrice,
+        product: {
+          id: row.productId,
+          name: row.productName,
+          articleNumber: row.productArticleNumber,
+          description: row.productDescription,
+          price: row.productPrice,
+        },
+      })
+    );
+  }
+
+  // Delete order detail by ID
   static async deleteById(id: number): Promise<boolean> {
     const statement = `DELETE FROM Details WHERE id = ?`;
     const [result] = await conn.execute(statement, [id]);
+
     return (result as RowDataPacket).affectedRows > 0;
   }
 }

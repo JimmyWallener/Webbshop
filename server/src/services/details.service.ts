@@ -14,7 +14,7 @@ export class OrderDetailService {
   }
 
   // Get all order details
-  async getOrderDetails(): Promise<OrderDetail[]> {
+  async findAll(): Promise<OrderDetail[]> {
     try {
       const orderDetails = await OrderDetail.findAll();
       return orderDetails;
@@ -24,7 +24,7 @@ export class OrderDetailService {
   }
 
   // Get order details by orderId
-  async getOrderDetailsByOrderId(orderId: number): Promise<OrderDetail[]> {
+  async findOneByOrderId(orderId: number): Promise<OrderDetail[]> {
     try {
       const orderDetails = await OrderDetail.findByOrderId(orderId);
       return orderDetails;

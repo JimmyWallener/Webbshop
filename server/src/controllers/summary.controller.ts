@@ -7,7 +7,6 @@ const OrderDetailSchema = z.object({
   orderId: z.number().positive(),
   productId: z.number().positive(),
   quantity: z.number().positive(),
-  totalPrice: z.number().nonnegative(),
 });
 
 export class OrderDetailController {
@@ -39,9 +38,9 @@ export class OrderDetailController {
   }
 
   // Get all order details
-  async getOrderDetails(req: Request, res: Response): Promise<void> {
+  async findAll(req: Request, res: Response): Promise<void> {
     try {
-      const orderDetails = await this.orderDetailService.getOrderDetails();
+      const orderDetails = await this.orderDetailService.findAll();
       res.status(200).json(orderDetails.map((detail) => detail.toJson()));
     } catch (error) {
       res.status(500).json({
@@ -52,11 +51,12 @@ export class OrderDetailController {
   }
 
   // Get order details by orderId
-  async getOrderDetailsByOrderId(req: Request, res: Response): Promise<void> {
+  async findOneByOrderId(req: Request, res: Response): Promise<void> {
     try {
       const { orderId } = req.params;
-      const orderDetails =
-        await this.orderDetailService.getOrderDetailsByOrderId(Number(orderId));
+      const orderDetails = await this.orderDetailService.findOneByOrderId(
+        Number(orderId)
+      );
       if (orderDetails.length === 0) {
         res.status(404).json({ message: 'No order details found' });
         return;

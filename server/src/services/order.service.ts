@@ -12,7 +12,7 @@ export class OrderService {
   }
 
   // Get all orders
-  async getOrders(): Promise<Order[]> {
+  async findAll(): Promise<Order[]> {
     try {
       return await Order.findAll();
     } catch (error) {
@@ -21,7 +21,7 @@ export class OrderService {
   }
 
   // Get a single order by ID
-  async getOrderById(id: number): Promise<Order | null> {
+  async findOneById(id: number): Promise<Order | null> {
     try {
       return await Order.findById(id);
     } catch (error) {

@@ -23,9 +23,9 @@ export class OrderController {
   }
 
   // Get all orders
-  async getOrders(req: Request, res: Response): Promise<void> {
+  async findAll(req: Request, res: Response): Promise<void> {
     try {
-      const orders = await this.orderService.getOrders();
+      const orders = await this.orderService.findAll();
       res.status(200).json(orders.map((order) => order.toJson()));
     } catch (error) {
       res.status(500).json({
@@ -36,10 +36,10 @@ export class OrderController {
   }
 
   // Get a single order by ID
-  async getOrderById(req: Request, res: Response): Promise<void> {
+  async findOneById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const order = await this.orderService.getOrderById(Number(id));
+      const order = await this.orderService.findOneById(Number(id));
       if (!order) {
         res.status(404).json({ message: 'Order not found' });
         return;

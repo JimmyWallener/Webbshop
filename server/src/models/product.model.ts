@@ -1,4 +1,5 @@
 import conn from '@db/db';
+import { RowDataPacket } from 'mysql2';
 
 export interface ProductInterface {
   name: string;
@@ -65,7 +66,7 @@ export class Product {
       product.description,
     ]);
     return new Product(
-      (result as any).insertId,
+      (result as RowDataPacket).insertId,
       product.name,
       product.articleNumber,
       product.price,
@@ -105,12 +106,12 @@ export class Product {
       updatedData.description,
       id,
     ]);
-    return (result as any).affectedRows > 0;
+    return (result as RowDataPacket).affectedRows > 0;
   }
 
   static async deleteById(id: number): Promise<boolean> {
     const statement = `DELETE FROM Products WHERE id = ?`;
     const [result] = await conn.execute(statement, [id]);
-    return (result as any).affectedRows > 0;
+    return (result as RowDataPacket).affectedRows > 0;
   }
 }

@@ -1,4 +1,5 @@
 import conn from '@db/db';
+import { RowDataPacket } from 'mysql2';
 
 export interface OrderInterface {
   createdAt: Date;
@@ -28,14 +29,13 @@ export class Order {
     };
   }
 
-  // Database interaction methods
   static async create(order: OrderInterface): Promise<Order> {
     const statement = `
       INSERT INTO Orders (createdAt)
       VALUES (?)
     `;
     const [result] = await conn.execute(statement, [order.createdAt]);
-    return new Order((result as any).insertId, order.createdAt);
+    return new Order((result as RowDataPacket).insertId, order.createdAt);
   }
 
   static async findAll(): Promise<Order[]> {
@@ -58,7 +58,7 @@ export class Order {
   ): Promise<Order | null> {
     const statement = `UPDATE Orders SET createdAt = ? WHERE id = ?`;
     const [result] = await conn.execute(statement, [order.createdAt, id]);
-    if ((result as any).affectedRows === 0) {
+    if ((result as RowDataPacket).affectedRows === 0) {
       return null;
     }
     return new Order(id, order.createdAt);
@@ -67,6 +67,6 @@ export class Order {
   static async deleteById(id: number): Promise<boolean> {
     const statement = `DELETE FROM Orders WHERE id = ?`;
     const [result] = await conn.execute(statement, [id]);
-    return (result as any).affectedRows > 0;
+    return (result as RowDataPacket).affectedRows > 0;
   }
 }

@@ -189,7 +189,6 @@ POST /api/order-details
   "orderId": 1,
   "productId": 1,
   "quantity": 2,
-  "totalPrice": 200.0
 }
 ```
 

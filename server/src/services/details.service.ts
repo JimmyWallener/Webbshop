@@ -33,6 +33,21 @@ export class OrderDetailService {
     }
   }
 
+  // Update an order detail
+  async updateOrderDetail(
+    id: number,
+    orderDetailData: OrderDetailInterface
+  ): Promise<OrderDetail | null> {
+    try {
+      const updatedOrderDetail = await OrderDetail.updateById(
+        id,
+        orderDetailData
+      );
+      return updatedOrderDetail;
+    } catch (error) {
+      throw new Error('Error updating order detail');
+    }
+  }
   // Delete an order detail by ID
   async deleteOrderDetail(id: number): Promise<boolean> {
     try {

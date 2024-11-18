@@ -1,39 +1,18 @@
 import { OrderService } from '@services/order.service';
 import { Request, Response } from 'express';
-import { z } from 'zod';
-
-// Define schema for order validation
-const OrderSchema = z.object({
-  productId: z
-    .number()
-    .min(1, { message: 'Product ID must be a positive integer' }),
-  quantity: z.number().min(1, { message: 'Quantity must be at least 1' }),
-});
 
 export class OrderController {
   private orderService: OrderService;
 
   constructor() {
-    this.orderService = new OrderService(); // Instantiate the service
+    this.orderService = new OrderService();
   }
 
   // Create a new order
   async createOrder(req: Request, res: Response): Promise<void> {
-    const parsedData = OrderSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      res.status(400).json({ errors: parsedData.error.errors });
-      return;
-    }
-
     try {
-      const { productId, quantity } = parsedData.data;
-      const createdAt = new Date();
-
-      const newOrder = await this.orderService.createOrder({
-        productId,
-        quantity,
-        createdAt,
-      });
+      const { createdAt } = req.body;
+      const newOrder = await this.orderService.createOrder({ createdAt });
       res.status(201).json(newOrder.toJson());
     } catch (error) {
       res.status(500).json({
@@ -76,23 +55,17 @@ export class OrderController {
 
   // Update an order
   async updateOrder(req: Request, res: Response): Promise<void> {
-    const parsedData = OrderSchema.safeParse(req.body);
-    if (!parsedData.success) {
-      res.status(400).json({ errors: parsedData.error.errors });
-      return;
-    }
-
     try {
       const { id } = req.params;
-      const success = await this.orderService.updateOrder(Number(id), {
-        ...parsedData.data,
-        createdAt: new Date(),
+      const { createdAt } = req.body;
+      const updatedOrder = await this.orderService.updateOrder(Number(id), {
+        createdAt,
       });
-      if (!success) {
+      if (!updatedOrder) {
         res.status(404).json({ message: 'Order not found' });
         return;
       }
-      res.status(200).json({ message: 'Order updated successfully' });
+      res.status(200).json(updatedOrder.toJson());
     } catch (error) {
       res.status(500).json({
         message: 'Error updating order',

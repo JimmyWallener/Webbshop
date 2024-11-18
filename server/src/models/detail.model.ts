@@ -1,4 +1,5 @@
 import conn from '@db/db';
+import { RowDataPacket } from 'mysql2';
 export interface OrderDetailInterface {
   orderId: number;
   productId: number;
@@ -91,10 +92,39 @@ export class OrderDetail {
     );
   }
 
+  // Update an order detail by ID
+  static async updateById(
+    id: number,
+    orderDetail: OrderDetailInterface
+  ): Promise<OrderDetail | null> {
+    const statement = `
+      UPDATE Details
+      SET orderId = ?, productId = ?, quantity = ?, totalPrice = ?
+      WHERE id = ?
+    `;
+    const [result] = await conn.execute(statement, [
+      orderDetail.orderId,
+      orderDetail.productId,
+      orderDetail.quantity,
+      orderDetail.totalPrice,
+      id,
+    ]);
+    if ((result as RowDataPacket).affectedRows === 0) {
+      return null;
+    }
+    return new OrderDetail(
+      id,
+      orderDetail.orderId,
+      orderDetail.productId,
+      orderDetail.quantity,
+      orderDetail.totalPrice
+    );
+  }
+
   // Delete an order detail by ID
   static async deleteById(id: number): Promise<boolean> {
     const statement = `DELETE FROM Details WHERE id = ?`;
     const [result] = await conn.execute(statement, [id]);
-    return (result as any).affectedRows > 0;
+    return (result as RowDataPacket).affectedRows > 0;
   }
 }

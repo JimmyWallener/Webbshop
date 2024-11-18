@@ -9,6 +9,7 @@ router.get('/', (req, res) => controller.getOrderDetails(req, res));
 router.get('/:orderId', (req, res) =>
   controller.getOrderDetailsByOrderId(req, res)
 );
+router.put('/:id', (req, res) => controller.updateOrderDetail(req, res));
 router.delete('/:id', (req, res) => controller.deleteOrderDetail(req, res));
 
 export default router;

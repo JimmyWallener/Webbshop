@@ -70,6 +70,34 @@ export class OrderDetailController {
     }
   }
 
+  // Update an order detail
+  async updateOrderDetail(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const parsedData = OrderDetailSchema.safeParse(req.body);
+    if (!parsedData.success) {
+      res.status(400).json({ errors: parsedData.error.errors });
+      return;
+    }
+
+    try {
+      const updatedOrderDetail =
+        await this.orderDetailService.updateOrderDetail(
+          Number(id),
+          parsedData.data
+        );
+      if (!updatedOrderDetail) {
+        res.status(404).json({ message: 'Order detail not found' });
+        return;
+      }
+      res.status(200).json(updatedOrderDetail.toJson());
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error updating order detail',
+        error: (error as Error).message,
+      });
+    }
+  }
+
   // Delete an order detail by ID
   async deleteOrderDetail(req: Request, res: Response): Promise<void> {
     try {

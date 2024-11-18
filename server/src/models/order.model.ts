@@ -1,8 +1,6 @@
 import conn from '@db/db';
 
 export interface OrderInterface {
-  productId: number;
-  quantity: number;
   createdAt: Date;
 }
 
@@ -12,31 +10,20 @@ export interface OrderResponseInterface extends OrderInterface {
 
 export class Order {
   id: number;
-  productId: number;
-  quantity: number;
   createdAt: Date;
 
-  constructor(
-    id: number,
-    productId: number,
-    quantity: number,
-    createdAt: Date
-  ) {
+  constructor(id: number, createdAt: Date) {
     this.id = id;
-    this.productId = productId;
-    this.quantity = quantity;
     this.createdAt = createdAt;
   }
 
   static fromJson(data: OrderResponseInterface): Order {
-    return new Order(data.id, data.productId, data.quantity, data.createdAt);
+    return new Order(data.id, data.createdAt);
   }
 
   toJson(): OrderResponseInterface {
     return {
       id: this.id,
-      productId: this.productId,
-      quantity: this.quantity,
       createdAt: this.createdAt,
     };
   }
@@ -44,20 +31,11 @@ export class Order {
   // Database interaction methods
   static async create(order: OrderInterface): Promise<Order> {
     const statement = `
-      INSERT INTO Orders (productId, quantity, createdAt)
-      VALUES (?, ?, ?)
+      INSERT INTO Orders (createdAt)
+      VALUES (?)
     `;
-    const [result] = await conn.execute(statement, [
-      order.productId,
-      order.quantity,
-      order.createdAt,
-    ]);
-    return new Order(
-      (result as any).insertId,
-      order.productId,
-      order.quantity,
-      order.createdAt
-    );
+    const [result] = await conn.execute(statement, [order.createdAt]);
+    return new Order((result as any).insertId, order.createdAt);
   }
 
   static async findAll(): Promise<Order[]> {
@@ -74,21 +52,16 @@ export class Order {
     return Order.fromJson((rows as OrderResponseInterface[])[0]);
   }
 
-  static async update(
+  static async updateById(
     id: number,
-    updatedData: Partial<OrderInterface>
-  ): Promise<boolean> {
-    const statement = `
-      UPDATE Orders
-      SET productId = ?, quantity = ?
-      WHERE id = ?
-    `;
-    const [result] = await conn.execute(statement, [
-      updatedData.productId,
-      updatedData.quantity,
-      id,
-    ]);
-    return (result as any).affectedRows > 0;
+    order: OrderInterface
+  ): Promise<Order | null> {
+    const statement = `UPDATE Orders SET createdAt = ? WHERE id = ?`;
+    const [result] = await conn.execute(statement, [order.createdAt, id]);
+    if ((result as any).affectedRows === 0) {
+      return null;
+    }
+    return new Order(id, order.createdAt);
   }
 
   static async deleteById(id: number): Promise<boolean> {

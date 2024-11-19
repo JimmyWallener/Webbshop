@@ -14,7 +14,7 @@ The server is the backend of the application. It handles all the business logic 
 
 ## Structure
 
-- `client/` - Frontend code (under development)
+- `client/` - Frontend code (contains its own README)
 - `server/` - Backend code (contains its own README)
 
 ## Getting Started

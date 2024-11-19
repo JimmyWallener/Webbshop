@@ -34,6 +34,7 @@ export class Order {
       INSERT INTO Orders (createdAt)
       VALUES (?)
     `;
+
     const [result] = await conn.execute(statement, [order.createdAt]);
     return new Order((result as RowDataPacket).insertId, order.createdAt);
   }
